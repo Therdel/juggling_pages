@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Juggling 🌽y 🍵o</title>
+</head>
+<body>
+    <center id="Content">
+        <h2>Juggling 🌽y 🍵o</h2>
+        <form>
+            <button type="button" id="buttonGetBleDevice">Connect with a BLE device</button>
+        </form>
+        <div id="webBluetoothIndicator"></div>
+    </center>
+    <h3 style="margin-bottom: 0;">Log:</h3>
+    <div style="padding-left: 3em;" id="log"></div>
+</body>
+<!-- <script type="module" src="pkg/main/main.js"></script> -->
+<script>
+    function log(message) {
+        console.log(message)
+        const el = document.createElement("div")
+        el.innerHTML = message
+        document.getElementById("log").append(el);
+    }
+
+    function isWebBLEAvailable() {
+        if (!navigator.bluetooth) {
+            log("Web Bluetooth is not available!")
+            return false
+        }
+        return true
+    }
+
+    async function getDeviceInfo() {
+        const options = { acceptAllDevices: true }
+
+        
+        log("Requesting device...")
+        try {
+            device = await navigator.bluetooth.requestDevice(options)
+        } catch (error) {
+            log(`Request device error: [${error}]`)
+            return
+        }
+        log(`Got device "${device.name}"`)
+    }
+
+    const webBluetoothIndicator = document.getElementById("webBluetoothIndicator")
+    webBluetoothIndicator.innerHTML = `WebBluetooth available: ${isWebBLEAvailable() ? "✅" : "❌"}`
+
+    let button = document.getElementById("buttonGetBleDevice")
+    button.onclick = getDeviceInfo
+</script>
