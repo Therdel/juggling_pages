@@ -9,6 +9,7 @@
         <h2>Juggling 🌽y 🍵o</h2>
         <form>
             <button type="button" id="buttonGetBleDevice">Connect with a BLE device</button>
+            <button type="button" id="buttonToggleLed">Toggle LED</button>
         </form>
         <div id="webBluetoothIndicator"></div>
     </center>
@@ -31,24 +32,59 @@
         }
         return true
     }
+    
+    const Command = {
+        LED_TOGGLE: 0
+    }
 
-    async function getDeviceInfo() {
-        const options = { acceptAllDevices: true }
 
-        
-        log("Requesting device...")
+    const UUID_characteristic = "19b10000-e8f2-537e-4f6c-d104768a1214"
+    const UUID_service = "19b10000-e8f2-537e-4f6c-d104768a1215"
+
+    class Device {
+        constructor(device, command_characteristic) {
+            this.device = device
+            this.command_characteristic = command_characteristic
+        }
+
+        send_command(command) {
+            try {
+                const value = Uint8Array.of(command);
+                this.command_characteristic.writeValue(value);
+            } catch (error) {
+                log(`Error trying to write to characteristic: [${error}]`)
+                return
+            }
+        }
+    }
+
+    async function connect() {
+        const options = {
+            // acceptAllDevices: true,
+            filters: [{services: [UUID_service]}]
+        }
         try {
-            device = await navigator.bluetooth.requestDevice(options)
+            const device = await navigator.bluetooth.requestDevice(options)
+            const server = await device.gatt.connect()
+            const service = await server.getPrimaryService(UUID_service)
+            const command_characteristic = await service.getCharacteristic(UUID_characteristic)
+            return new Device(device, command_characteristic)
         } catch (error) {
-            log(`Request device error: [${error}]`)
+            log(`Error trying to connect to device: [${error}]`)
             return
         }
-        log(`Got device "${device.name}"`)
     }
 
     const webBluetoothIndicator = document.getElementById("webBluetoothIndicator")
     webBluetoothIndicator.innerHTML = `WebBluetooth available: ${isWebBLEAvailable() ? "✅" : "❌"}`
 
-    let button = document.getElementById("buttonGetBleDevice")
-    button.onclick = getDeviceInfo
+    let button_connect = document.getElementById("buttonGetBleDevice")
+    let button_toggle_led = document.getElementById("buttonToggleLed")
+    let device = null
+    button_connect.onclick = async () => {
+        device = await connect()
+    }
+    button_toggle_led.onclick = () => {
+        device.send_command(Command.LED_TOGGLE)
+    }
 </script>
